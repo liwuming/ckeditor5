@@ -586,27 +586,27 @@ export default class WidgetTypeAround extends Plugin {
 				const range = schema.getNearestSelectionRange( model.createPositionBefore( selectedModelWidget ), direction );
 
 				if ( range ) {
-					const deepestEmptyRangeAncestor = getDeepestEmptyPositionAncestor( schema, range.start );
+					const probe = model.createSelection( range.start );
+					model.modifySelection( probe, { direction } );
 
-					// Handle a case when there's an empty document tree branch before the widget that should be deleted.
-					//
-					//		<foo><bar></bar></foo>[<widget></widget>]
-					//
-					// Note: Range is collapsed, so it does not matter if this is start or end.
-					if ( deepestEmptyRangeAncestor ) {
-						model.deleteContent( model.createSelection( deepestEmptyRangeAncestor, 'on' ), {
-							doNotAutoparagraph: true
-						} );
-					}
-					// Handle a case when there's a non-empty document tree branch before the widget.
-					//
-					//		<foo>bar</foo>[<widget></widget>] -> <foo>ba[]</foo><widget></widget>
-					//
-					else {
+					if ( !probe.getFirstPosition().isEqual( range.start ) ) {
 						model.change( writer => {
 							writer.setSelection( range );
 							editor.execute( 'delete' );
 						} );
+					} else {
+						const deepestEmptyRangeAncestor = getDeepestEmptyPositionAncestor( schema, range.start );
+
+						// Handle a case when there's an empty document tree branch before the widget that should be deleted.
+						//
+						//		<foo><bar></bar></foo>[<widget></widget>]
+						//
+						// Note: Range is collapsed, so it does not matter if this is start or end.
+						if ( deepestEmptyRangeAncestor ) {
+							model.deleteContent( model.createSelection( deepestEmptyRangeAncestor, 'on' ), {
+								doNotAutoparagraph: true
+							} );
+						}
 					}
 				}
 			} else {
